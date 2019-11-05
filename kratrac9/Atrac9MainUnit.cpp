@@ -501,7 +501,8 @@ HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
 		goto fail;
 	}
 
-	HANDLE_ATRAC9 decHandle = KrAt9GetHandle();
+	HANDLE_ATRAC9 decHandle;
+	decHandle = KrAt9GetHandle();
 	if (decHandle == nullptr)
 	{
 		TVPAddLog(TJS_W("Atrac9: [ERROR] Atrac9GetHandle() = NULL"));
@@ -544,7 +545,8 @@ HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
 	InputFile->data_buffer = static_cast<unsigned char *>(calloc(sizeof(unsigned char), InputFile->codecInfo.superframeSize));
 	InputFile->sample_buffer = static_cast<samples *>(calloc(sizeof(samples), InputFile->codecInfo.channels * InputFile->codecInfo.frameSamples * InputFile->codecInfo.framesInSuperframe));
 
-	auto *reserved = reinterpret_cast<unsigned int *>(InputFile->inWaveHeader.at9Header.Reserved);
+	unsigned int *reserved;
+	reserved = reinterpret_cast<unsigned int *>(InputFile->inWaveHeader.at9Header.Reserved);
 	switch (InputFile->inWaveHeader.at9Header.nChannels) {
 		case ATRAC9_CHANNEL_CH4_0:
 		case ATRAC9_CHANNEL_CH5_1:
@@ -578,7 +580,8 @@ HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
 	Format.dwSeekable = 2;
 	Format.ui64TotalSamples = InputFile->totallen;
 
-	const double timetotal = static_cast<double>(Format.ui64TotalSamples) / Format.dwSamplesPerSec;
+	double timetotal;
+	timetotal = static_cast<double>(Format.ui64TotalSamples) / Format.dwSamplesPerSec;
 	if (timetotal<0) Format.dwTotalTime = 0; else Format.dwTotalTime = static_cast<unsigned long>(timetotal * 1000.0);
 
 	// Reset position
@@ -683,7 +686,7 @@ long long _cdecl Atrac9WaveDecoder::tell_func(void *stream)
 // ##########################################################################
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-HRESULT _stdcall GetModuleInstance(ITSSModule **out, ITSSStorageProvider *provider,
+extern "C" __declspec(dllexport) HRESULT _stdcall GetModuleInstance(ITSSModule **out, ITSSStorageProvider *provider,
 	IStream * config, HWND mainwin)
 {
 	// GetModuleInstance function (exported)
