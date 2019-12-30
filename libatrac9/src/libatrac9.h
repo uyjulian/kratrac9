@@ -3,6 +3,16 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#ifdef COMPILING_DLL 
+#define DLLEXPORT __declspec(dllexport)
+#else
+#define DLLEXPORT __declspec(dllimport)  
+#endif
+#else
+#define DLLEXPORT
+#endif
+
 #define ATRAC9_CONFIG_DATA_SIZE 4
 
 typedef struct {
@@ -17,14 +27,13 @@ typedef struct {
 } Atrac9CodecInfo;
 
 typedef void* HANDLE_ATRAC9;
+DLLEXPORT void* Atrac9GetHandle(void);
+DLLEXPORT void Atrac9ReleaseHandle(void* handle);
 
-void* Atrac9GetHandle(void);
-void Atrac9ReleaseHandle(void* handle);
+DLLEXPORT int Atrac9InitDecoder(void* handle, unsigned char *pConfigData);
+DLLEXPORT int Atrac9Decode(void* handle, const unsigned char *pAtrac9Buffer, short *pPcmBuffer, int *pNBytesUsed);
 
-int Atrac9InitDecoder(void* handle, unsigned char *pConfigData);
-int Atrac9Decode(void* handle, const unsigned char *pAtrac9Buffer, void *pPcmBuffer, int *pNBytesUsed);
-
-int Atrac9GetCodecInfo(void* handle, Atrac9CodecInfo *pCodecInfo);
+DLLEXPORT int Atrac9GetCodecInfo(void* handle, Atrac9CodecInfo *pCodecInfo);
 
 #ifdef __cplusplus
 }
