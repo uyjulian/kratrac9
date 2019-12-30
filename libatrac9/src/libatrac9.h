@@ -7,7 +7,10 @@ extern "C" {
 #ifdef COMPILING_DLL 
 #define DLLEXPORT __declspec(dllexport)
 #else
+#if 0
 #define DLLEXPORT __declspec(dllimport)  
+#endif
+#define DLLEXPORT
 #endif
 #else
 #define DLLEXPORT
