@@ -69,15 +69,15 @@ static const GUID KSDATAFORMAT_SUBTYPE_ATRAC9 =
 /******************************************************************************
 	common functinos
 ******************************************************************************/
-static unsigned long _fgetLong(void *fp, const Atrac9FileCallbacks *_cb);
+static tjs_uint32 _fgetLong(void *fp, const Atrac9FileCallbacks *_cb);
 static unsigned short _fgetShort(void *fp, const Atrac9FileCallbacks *_cb);
 
 /******************************************************************************
 	parse wave file
 ******************************************************************************/
-int parseWaveHeader(void *fp, FmtChunk *fmt, unsigned __int64 *total, int *encdelay, const Atrac9FileCallbacks *_cb)
+int parseWaveHeader(void *fp, FmtChunk *fmt, tjs_uint64 *total, int *encdelay, const Atrac9FileCallbacks *_cb)
 {
-    unsigned long	chunkLength;
+    tjs_uint32	chunkLength;
     int 	format = SCE_ERROR_MAIN_UNKNOW_FORMAT;
     long long 	dataChunkStart = 0;
     unsigned short Samples;
@@ -101,7 +101,7 @@ int parseWaveHeader(void *fp, FmtChunk *fmt, unsigned __int64 *total, int *encde
     } while (!_cb->seek(fp, chunkLength, SEEK_CUR));
 
     while (_cb->tell(fp) != EOF) {
-		unsigned long chunkType = _fgetLong(fp, _cb);
+		tjs_uint32 chunkType = _fgetLong(fp, _cb);
 		if (_cb->tell(fp) == EOF)
 			break;
 		chunkLength = _fgetLong(fp, _cb);
@@ -154,7 +154,7 @@ int parseWaveHeader(void *fp, FmtChunk *fmt, unsigned __int64 *total, int *encde
 					return SCE_ERROR_COMMON_FREAD_ERROR;
 				}
 
-				if (pcmextHeader->SubFormat == KSDATAFORMAT_SUBTYPE_ATRAC9) {
+				if (!memcmp(&(pcmextHeader->SubFormat), &KSDATAFORMAT_SUBTYPE_ATRAC9, sizeof(GUID))) {
 					pat9header = &fmt->at9Header;
 					pat9header->Samples.wSamplesPerBlock 	= Samples;
 					pat9header->dwVersionInfo 			= _fgetLong(fp, _cb);
@@ -175,13 +175,13 @@ int parseWaveHeader(void *fp, FmtChunk *fmt, unsigned __int64 *total, int *encde
 					chunkLength -= AT9_FMT_CHUNK_DATA_SIZE;
 					format = FORMAT_AT9;
 				}
-				else if (pcmextHeader->SubFormat == KSDATAFORMAT_SUBTYPE_PCM) {
+				else if (!memcmp(&(pcmextHeader->SubFormat), &KSDATAFORMAT_SUBTYPE_PCM, sizeof(GUID))) {
 					pcmextHeader->Samples.wValidBitsPerSample = Samples;
 					chunkLength -= PCM_EXT_FMT_CHUNK_DATA_SIZE;
 					format = FORMAT_PCM;
 					/* rest is unknown data. just skip them */
 				}
-				else if (pcmextHeader->SubFormat == KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) {
+				else if (!memcmp(&(pcmextHeader->SubFormat), &KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, sizeof(GUID))) {
 					pcmextHeader->Samples.wValidBitsPerSample = Samples;
 					chunkLength -= PCM_EXT_FMT_CHUNK_DATA_SIZE;
 					format = FORMAT_IEEEFLOAT;
@@ -254,7 +254,7 @@ int parseWaveHeader(void *fp, FmtChunk *fmt, unsigned __int64 *total, int *encde
 					chunkLength -= 24;
 
 					tjs_char buf[256];
-					swprintf_s(buf, TJS_W("Atrac9: [loopstart = %8d, loopend = %8d]"), loopstart, loopend);
+					TJS_sprintf(buf, TJS_W("Atrac9: [loopstart = %8d, loopend = %8d]"), loopstart, loopend);
 					TVPAddLog(buf);
 				}
 			}
@@ -284,14 +284,14 @@ seek_data:
 int
 createPcmHeader(FILE *outfile,
 	FmtChunk *pInWaveHdr,
-	unsigned __int32 totalSamples,
+	tjs_uint32 totalSamples,
 	int nBytePerSample)
 {
 	PcmHeader *pcmHdr = &pInWaveHdr->pcmHeader;
 	int nAvgBytesPerSec = pcmHdr->nSamplesPerSec * pcmHdr->nChannels * nBytePerSample;
 	int nBlockAlign = pcmHdr->nChannels * nBytePerSample;
-	unsigned __int32 dataSize = pcmHdr->nChannels * nBytePerSample * totalSamples;
-	unsigned __int32 fileSize = PCM_HEADER_SIZE + dataSize;
+	tjs_uint32 dataSize = pcmHdr->nChannels * nBytePerSample * totalSamples;
+	tjs_uint32 fileSize = PCM_HEADER_SIZE + dataSize;
 
 	char chunk[4];
 	long long_num;
@@ -338,9 +338,9 @@ createPcmHeader(FILE *outfile,
 }
 
 /* get 32-bit data from the FILE stream */
-static unsigned long _fgetLong(void *fp, const Atrac9FileCallbacks *_cb)
+static tjs_uint32 _fgetLong(void *fp, const Atrac9FileCallbacks *_cb)
 {
-    unsigned long ret;
+    tjs_uint32 ret;
 	(*_cb->read)(fp, static_cast<void *>(&ret), 4);
     return ret;
 }

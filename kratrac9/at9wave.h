@@ -14,8 +14,17 @@
 #define _AT9WAVE_H_
 
 #include <stdio.h>
+#if 0
 #include <Windows.h>
+#endif
 #include "kratrac9.h"
+
+typedef struct _GUID {
+  unsigned long  Data1;
+  unsigned short Data2;
+  unsigned short Data3;
+  unsigned char  Data4[8];
+} GUID;
 
 /* Definition Of Format */
 #define FORMAT_PCM  (1)
@@ -165,11 +174,11 @@ typedef struct ATRAC9File {
 /******************************************************************************
 	Function Prototype Declare
 ******************************************************************************/
-int parseWaveHeader(void *fp, FmtChunk *fmt, unsigned __int64 *total, int *encdelay, const Atrac9FileCallbacks *_cb);
+int parseWaveHeader(void *fp, FmtChunk *fmt, tjs_uint64 *total, int *encdelay, const Atrac9FileCallbacks *_cb);
 
 int createPcmHeader(FILE     *outfile,
 	FmtChunk			*pInWaveHdr,
-	unsigned __int32	totalSamples,
+	tjs_uint32	totalSamples,
 	int					nBytePerSample);
 
 #endif /* _AT9WAVE_H_ */

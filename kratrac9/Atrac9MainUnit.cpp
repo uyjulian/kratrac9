@@ -9,24 +9,37 @@
 // libatrac9 in open source version: https://github.com/Thealexbarney/LibAtrac9
 //---------------------------------------------------------------------------
 
+#define _cdecl
+#define __int64 int64_t
+
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "kratrac9.h"
 #include "at9wave.h"
 
+#if 0
 #include <Windows.h>
+#endif
 #include <cstring>
 #include <sstream>
 #include <cstdlib>
+#if 0
 #include "tp_stub.h"
 #include "tvpsnd.h" // TSS sound system interface definitions
+#endif
+#include "ncbind/ncbind.hpp"
+#include "WaveIntf.h"
+#include "istream_compat.h"
 
 //---------------------------------------------------------------------------
+#if 0
 int WINAPI DllEntryPoint(HINSTANCE hinst, unsigned long reason, void* lpReserved)
 {
 	return 1;
 }
+#endif
 //---------------------------------------------------------------------------
+#if 0
 void strcpy_limit(LPWSTR dest, LPWSTR src, int n)
 {
 	// string copy with limitation
@@ -34,9 +47,13 @@ void strcpy_limit(LPWSTR dest, LPWSTR src, int n)
 	wcsncpy(dest, src, n-1);
 	dest[n-1] = '\0';
 }
+#endif
 //---------------------------------------------------------------------------
+#if 0
 ITSSStorageProvider *StorageProvider = nullptr;
+#endif
 //---------------------------------------------------------------------------
+#if 0
 class Atrac9Module : public ITSSModule // module interface
 {
 	ULONG RefCount; // reference count
@@ -95,6 +112,59 @@ private:
 	int static _cdecl close_func(void *stream);
 	long long static _cdecl tell_func(void *stream);
 };
+#endif
+class Atrac9WaveDecoder : public tTVPWaveDecoder
+{
+	bool InputFileInit; // whether InputFile is inited
+	ATRAC9File* InputFile; // OggOpusFile instance
+	IStream *InputStream; // input stream
+	tTVPWaveFormat Format; // output PCM format
+
+public:
+    Atrac9WaveDecoder();
+    ~Atrac9WaveDecoder();
+
+public:
+    // ITSSWaveDecoder
+    virtual void GetFormat(tTVPWaveFormat & format);
+    virtual bool Render(void *buf, tjs_uint bufsamplelen, tjs_uint& rendered);
+    virtual bool SetPosition(tjs_uint64 samplepos);
+
+    bool SetStream(IStream *stream, const ttstr & url);
+
+    bool Open(const ttstr & url);
+    bool ReadBlock(int , int );
+
+private:
+	int static _cdecl read_func(void *stream, void *ptr, int nbytes);
+	int static _cdecl seek_func(void *stream, long long offset, int whence);
+	int static _cdecl close_func(void *stream);
+	long long static _cdecl tell_func(void *stream);
+};
+
+class Atrac9WaveDecoderCreator : public tTVPWaveDecoderCreator
+{
+public:
+    tTVPWaveDecoder * Create(const ttstr & storagename, const ttstr & extension) {
+    	IStream *stream;
+		stream = TVPCreateIStream(storagename, TJS_BS_READ);
+		if(!stream)
+		{
+			return nullptr;
+		}
+		Atrac9WaveDecoder * decoder = new Atrac9WaveDecoder();
+		if(!decoder->SetStream(stream, storagename))
+		{
+			// error; stream may not be a vorbis stream
+			delete decoder;
+			stream->Release();
+			return nullptr;
+		}
+
+        return decoder;
+    }
+};
+#if 0
 //---------------------------------------------------------------------------
 // Atrac9Module implementation ##############################################
 //---------------------------------------------------------------------------
@@ -200,13 +270,16 @@ HRESULT __stdcall Atrac9Module::GetMediaInstance(LPWSTR url, IUnknown ** instanc
 
 	return S_OK;
 }
+#endif
 //---------------------------------------------------------------------------
 // Atrac9WaveDecoder implementation #########################################
 //---------------------------------------------------------------------------
 Atrac9WaveDecoder::Atrac9WaveDecoder()
 {
 	// Atrac9WaveDecoder constructor
+#if 0
 	RefCount = 1;
+#endif
 	InputFileInit = false;
 	InputFile = nullptr;
 	InputStream = nullptr;
@@ -235,6 +308,7 @@ Atrac9WaveDecoder::~Atrac9WaveDecoder()
 	}
 }
 //---------------------------------------------------------------------------
+#if 0
 HRESULT Atrac9WaveDecoder::QueryInterface(REFIID iid, void ** ppvObject)
 {
 	// IUnknown::QueryInterface
@@ -254,12 +328,16 @@ HRESULT Atrac9WaveDecoder::QueryInterface(REFIID iid, void ** ppvObject)
 	}
 	return E_NOINTERFACE;
 }
+#endif
 //---------------------------------------------------------------------------
+#if 0
 ULONG __stdcall Atrac9WaveDecoder::AddRef()
 {
 	return ++RefCount;
 }
+#endif
 //---------------------------------------------------------------------------
+#if 0
 ULONG __stdcall Atrac9WaveDecoder::Release()
 {
 	if(RefCount == 1)
@@ -270,7 +348,9 @@ ULONG __stdcall Atrac9WaveDecoder::Release()
 
 	return --RefCount;
 }
+#endif
 //---------------------------------------------------------------------------
+#if 0
 HRESULT __stdcall Atrac9WaveDecoder::GetFormat(TSSWaveFormat *format)
 {
 	// return PCM format
@@ -283,18 +363,32 @@ HRESULT __stdcall Atrac9WaveDecoder::GetFormat(TSSWaveFormat *format)
 
 	return S_OK;
 }
+#endif
+void Atrac9WaveDecoder::GetFormat(tTVPWaveFormat & format)
+{
+	if (InputFileInit)
+	{
+		format = Format;
+	}
+}
 //---------------------------------------------------------------------------
+#if 0
 HRESULT __stdcall Atrac9WaveDecoder::Render(void *buf, unsigned long bufsamplelen,
 	unsigned long *rendered, unsigned long *status)
+#endif
+bool Atrac9WaveDecoder::Render(void *buf, tjs_uint bufsamplelen, tjs_uint& rendered)
 {
 	// render output PCM
+#if 0
 	if (!InputFileInit) return E_FAIL; // InputFile is yet not inited
+#endif
+	if (!InputFileInit) return false;
 
 	const auto superframeSamples = InputFile->inWaveHeader.at9Header.Samples.wSamplesPerBlock;
 
 	samples *pPcmBuffer = static_cast<samples *>(buf);
 	unsigned int pos = 0; // decoded PCM (in sample)
-	unsigned __int64 totalsample = bufsamplelen;
+	tjs_uint64 totalsample = bufsamplelen;
 	if (InputFile->totallen - InputFile->current_sample < totalsample)
 		totalsample = InputFile->totallen - InputFile->current_sample;
 
@@ -371,14 +465,14 @@ HRESULT __stdcall Atrac9WaveDecoder::Render(void *buf, unsigned long bufsamplele
 
 					if (handle_status < 0) {
 						tjs_char string_buf[256];
-						swprintf_s(string_buf, TJS_W("Atrac9: [ERROR] Atrac9DecDecode() = 0x%x."), handle_status);
+						TJS_sprintf(string_buf, TJS_W("Atrac9: [ERROR] Atrac9DecDecode() = 0x%x."), handle_status);
 						TVPAddLog(string_buf);
 #ifndef USE_OPEN_SOURCE_LIBRARY
 						if (handle_status == SCE_AT9_ERROR_INTERNAL_ERROR) {
 							SceAt9InternalErrorInfo internalErrorInfo;
 
 							sceAt9GetInternalErrorInfo(InputFile->decHandle, &internalErrorInfo);
-							swprintf_s(string_buf, TJS_W("Atrac9: [ERROR] internalErrorInfo [%d, %d, %d]"), internalErrorInfo.errorCode, internalErrorInfo.detailError, internalErrorInfo.detailError);
+							TJS_sprintf(string_buf, TJS_W("Atrac9: [ERROR] internalErrorInfo [%d, %d, %d]"), internalErrorInfo.errorCode, internalErrorInfo.detailError, internalErrorInfo.detailError);
 							TVPAddLog(string_buf);
 						}
 #endif
@@ -408,14 +502,14 @@ HRESULT __stdcall Atrac9WaveDecoder::Render(void *buf, unsigned long bufsamplele
 
 					if (handle_status < 0) {
 						tjs_char string_buf[256];
-						swprintf_s(string_buf, TJS_W("Atrac9: [ERROR] Atrac9DecDecode() = 0x%x."), handle_status);
+						TJS_sprintf(string_buf, TJS_W("Atrac9: [ERROR] Atrac9DecDecode() = 0x%x."), handle_status);
 						TVPAddLog(string_buf);
 #ifndef USE_OPEN_SOURCE_LIBRARY
 						if (handle_status == SCE_AT9_ERROR_INTERNAL_ERROR) {
 							SceAt9InternalErrorInfo internalErrorInfo;
 
 							sceAt9GetInternalErrorInfo(InputFile->decHandle, &internalErrorInfo);
-							swprintf_s(string_buf, TJS_W("Atrac9: [ERROR] internalErrorInfo [%d, %d, %d]"), internalErrorInfo.errorCode, internalErrorInfo.detailError, internalErrorInfo.detailError);
+							TJS_sprintf(string_buf, TJS_W("Atrac9: [ERROR] internalErrorInfo [%d, %d, %d]"), internalErrorInfo.errorCode, internalErrorInfo.detailError, internalErrorInfo.detailError);
 							TVPAddLog(string_buf);
 						}
 #endif
@@ -437,6 +531,10 @@ HRESULT __stdcall Atrac9WaveDecoder::Render(void *buf, unsigned long bufsamplele
 
 	InputFile->current_sample += pos;
 
+	rendered = pos;
+
+	return !(pos < bufsamplelen);
+#if 0
 	if (status)
 	{
 		*status = pos < bufsamplelen ? 0 : 1;
@@ -447,17 +545,26 @@ HRESULT __stdcall Atrac9WaveDecoder::Render(void *buf, unsigned long bufsamplele
 	{
 		*rendered = pos; // return renderd PCM samples
 	}
+#endif
 
+#if 0
 	return S_OK;
+#endif
 
 fail:
+#if 0
 	return E_FAIL;
+#endif
+	return false;
 }
 //---------------------------------------------------------------------------
+#if 0
 HRESULT __stdcall Atrac9WaveDecoder::SetPosition(unsigned __int64 samplepos)
+#endif
+bool Atrac9WaveDecoder::SetPosition(tjs_uint64 samplepos)
 {
 	// set PCM position (seek)
-	if(!InputFileInit) return E_FAIL;
+	if(!InputFileInit) return false;
 
 	InputFile->current_sample = samplepos;
 
@@ -477,10 +584,13 @@ HRESULT __stdcall Atrac9WaveDecoder::SetPosition(unsigned __int64 samplepos)
 	// seek 至最近的 superframe
 	seek_func(this, InputFile->dataChunkStart + superframeLength * InputFile->codecInfo.superframeSize, SEEK_SET);
 
-	return S_OK;
+	return true;
 }
 //---------------------------------------------------------------------------
+#if 0
 HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
+#endif
+bool Atrac9WaveDecoder::SetStream(IStream *stream, const ttstr & url)
 {
 	int status;
 
@@ -489,7 +599,10 @@ HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
 	InputStream->AddRef(); // add-ref
 
 	InputFile = static_cast<ATRAC9File *>(malloc(sizeof(ATRAC9File)));
+	memset(InputFile, 0, sizeof(ATRAC9File));
+#if 0
 	ZeroMemory(InputFile, sizeof(ATRAC9File));
+#endif
 
 	InputFile->encdelay = -1;
 	InputFile->callbacks = { read_func, seek_func, tell_func, close_func };
@@ -516,14 +629,14 @@ HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
 
 	if (status < 0) {
 		tjs_char buf[256];
-		swprintf_s(buf, TJS_W("Atarc9: [ERROR] Atarc9DecInit() = 0x%x"), status);
+		TJS_sprintf(buf, TJS_W("Atarc9: [ERROR] Atarc9DecInit() = 0x%x"), status);
 		TVPAddLog(buf);
 #ifndef USE_OPEN_SOURCE_LIBRARY
 		if (status == SCE_AT9_ERROR_INTERNAL_ERROR) {
 			SceAt9InternalErrorInfo internalErrorInfo;
 
 			sceAt9GetInternalErrorInfo(decHandle, &internalErrorInfo);
-			swprintf_s(buf, TJS_W("Atarc9: [ERROR] internalErrorInfo [%d, %d, %d]"), internalErrorInfo.errorCode, internalErrorInfo.detailError, internalErrorInfo.detailError);
+			TJS_sprintf(buf, TJS_W("Atarc9: [ERROR] internalErrorInfo [%d, %d, %d]"), internalErrorInfo.errorCode, internalErrorInfo.detailError, internalErrorInfo.detailError);
 			TVPAddLog(buf);
 		}
 #endif
@@ -537,7 +650,7 @@ HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
 		&InputFile->codecInfo);
 	if (status < 0) {
 		tjs_char buf[256];
-		swprintf_s(buf, TJS_W("Atrac9: [ERROR] Atrac9GetCodecInfo() = 0x%x."), status);
+		TJS_sprintf(buf, TJS_W("Atrac9: [ERROR] Atrac9GetCodecInfo() = 0x%x."), status);
 		TVPAddLog(buf);
 		goto fail;
 	}
@@ -573,21 +686,31 @@ HRESULT Atrac9WaveDecoder::SetStream(IStream *stream, LPWSTR url)
 	createPcmHeader(InputFile->outfile, &InputFile->inWaveHeader, static_cast<unsigned __int32>(InputFile->totallen), sizeof(samples));
 #endif
 
+#if 0
 	ZeroMemory(&Format, sizeof(Format));
 	Format.dwSamplesPerSec = InputFile->codecInfo.samplingRate;
 	Format.dwChannels = InputFile->codecInfo.channels;
 	Format.dwBitsPerSample = InputFile->codecInfo.wlength;
 	Format.dwSeekable = 2;
 	Format.ui64TotalSamples = InputFile->totallen;
+#endif
+	memset(&Format, 0, sizeof(Format));
+	Format.SamplesPerSec = InputFile->codecInfo.samplingRate;
+	Format.Channels = InputFile->codecInfo.channels;
+	Format.BitsPerSample = InputFile->codecInfo.wlength;
+	Format.BytesPerSample = InputFile->codecInfo.wlength / 8;
+	Format.IsFloat = false;
+	Format.Seekable = 2;
+	Format.TotalSamples = InputFile->totallen;
 
 	double timetotal;
-	timetotal = static_cast<double>(Format.ui64TotalSamples) / Format.dwSamplesPerSec;
-	if (timetotal<0) Format.dwTotalTime = 0; else Format.dwTotalTime = static_cast<unsigned long>(timetotal * 1000.0);
+	timetotal = static_cast<double>(Format.TotalSamples) / Format.SamplesPerSec;
+	if (timetotal<0) Format.TotalTime = 0; else Format.TotalTime = static_cast<unsigned long>(timetotal * 1000.0);
 
 	// Reset position
 	SetPosition(0);
 
-	return S_OK;
+	return true;
 
 fail:
 	// error!
@@ -600,7 +723,7 @@ fail:
 		free(InputFile->sample_buffer);
 	free(InputFile);
 	InputFile = nullptr;
-	return E_FAIL;
+	return false;
 }
 //---------------------------------------------------------------------------
 int _cdecl Atrac9WaveDecoder::read_func(void *stream, void *ptr, int nbytes)
@@ -673,19 +796,37 @@ long long _cdecl Atrac9WaveDecoder::tell_func(void *stream)
 	if(!decoder->InputStream) return -1;
 
 	LARGE_INTEGER newpos;
+	ULARGE_INTEGER old_result;
 	ULARGE_INTEGER result;
 	newpos.QuadPart = 0;
 
+	decoder->InputStream->Seek({0}, STREAM_SEEK_CUR, &old_result);
+	STATSTG statstg;
+	decoder->InputStream->Stat(&statstg, 0);
+	if((old_result.QuadPart == statstg.cbSize.QuadPart))
+	{
+		return EOF;
+	}
+
 	if(FAILED(decoder->InputStream->Seek(newpos, STREAM_SEEK_CUR, &result)))
 	{
-		return -1;
+		return EOF;
 	}
+
 	return result.QuadPart;
 }
 //---------------------------------------------------------------------------
 // ##########################################################################
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
+static Atrac9WaveDecoderCreator kratrac9_creator;
+static void kratrac9_init()
+{
+	TVPRegisterWaveDecoderCreator(&kratrac9_creator);
+}
+
+NCB_PRE_REGIST_CALLBACK(kratrac9_init);
+#if 0
 extern "C" __declspec(dllexport) HRESULT _stdcall GetModuleInstance(ITSSModule **out, ITSSStorageProvider *provider,
 	IStream * config, HWND mainwin)
 {
@@ -708,4 +849,5 @@ extern "C" __declspec(dllexport) HRESULT _stdcall V2Unlink()
 	TVPUninitImportStub();
 	return S_OK;
 }
+#endif
 //---------------------------------------------------------------------------

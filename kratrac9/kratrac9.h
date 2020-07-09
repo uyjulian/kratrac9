@@ -9,6 +9,8 @@
 #ifndef _KRATRAC9_H
 #define _KRATRAC9_H
 
+#include "ncbind/ncbind.hpp"
+#define USE_OPEN_SOURCE_LIBRARY
 #ifdef USE_OPEN_SOURCE_LIBRARY
 #include "../libatrac9/src/libatrac9.h"
 #else
