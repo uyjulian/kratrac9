@@ -150,8 +150,8 @@ typedef union {
 typedef struct ATRAC9File {
 	Atrac9FileCallbacks callbacks;
 
-	unsigned long long totallen;
-	unsigned long long current_sample;
+	tjs_uint64 totallen;
+	tjs_uint64 current_sample;
 
 	int encdelay;
 	long long dataChunkStart;
