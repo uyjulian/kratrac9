@@ -596,7 +596,9 @@ bool Atrac9WaveDecoder::SetStream(IStream *stream, const ttstr & url)
 
 	// set input stream
 	InputStream = stream;
+#if 0
 	InputStream->AddRef(); // add-ref
+#endif
 
 	InputFile = static_cast<ATRAC9File *>(malloc(sizeof(ATRAC9File)));
 	memset(InputFile, 0, sizeof(ATRAC9File));
