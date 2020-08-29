@@ -157,7 +157,6 @@ public:
 		{
 			// error; stream may not be a vorbis stream
 			delete decoder;
-			stream->Release();
 			return nullptr;
 		}
 
@@ -716,8 +715,12 @@ bool Atrac9WaveDecoder::SetStream(IStream *stream, const ttstr & url)
 
 fail:
 	// error!
-	InputStream->Release();
-	InputStream = nullptr;
+	if (InputStream)
+	{
+		InputStream->Release();
+		InputStream = nullptr;
+	}
+
 
 	if (InputFile->data_buffer)
 		free(InputFile->data_buffer);
