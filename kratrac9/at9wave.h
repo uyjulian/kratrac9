@@ -14,7 +14,7 @@
 #define _AT9WAVE_H_
 
 #include <stdio.h>
-#include <Windows.h>
+#include <windows.h>
 #include "kratrac9.h"
 
 /* Definition Of Format */

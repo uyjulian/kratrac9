@@ -14,7 +14,7 @@
 #include "kratrac9.h"
 #include "at9wave.h"
 
-#include <Windows.h>
+#include <windows.h>
 #include <cstring>
 #include <sstream>
 #include <cstdlib>
