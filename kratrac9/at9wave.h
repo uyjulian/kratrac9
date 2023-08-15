@@ -14,7 +14,11 @@
 #define _AT9WAVE_H_
 
 #include <stdio.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
+#include <objidl.h>
 #include "kratrac9.h"
 
 /* Definition Of Format */
